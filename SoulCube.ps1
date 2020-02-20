@@ -1,10 +1,11 @@
-
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$Path,
-    [switch]$f,
-    [switch]$fexe
+    [Parameter(Mandatory=$false)]
+    [String]$f,
+    [Parameter(Mandatory=$false)]
+    [String]$fexe,
+    [Parameter(Mandatory=$false)]
+    [String]$o
 )
 function get_ProviderType
 {
@@ -34,21 +35,25 @@ function get_ProviderType
     } 
     return $x
 }
-$Path=(Resolve-Path -Path $Path).path
-if($f -eq $true)
+
+if($f)
 {
+    $Path=(Resolve-Path -Path $f).path
     $Cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
     $Cert.Import($Path)
 }
-elseif ($fexe -eq $true) 
+elseif ($fexe) 
 {
+    $Path=(Resolve-Path -Path $fexe).path
     $Cert= Get-AuthenticodeSignature -FilePath  $Path
     $Cert=$Cert.SignerCertificate
 }
+else{write-host "exit";exit}
 $Certheader = [PSCustomObject]@{
-    "filename" = (ls $path).name
+    "Filename" = $(if ($fexe){(ls $path).name})
+    "FileHash" = $(if ($fexe){(Get-Filehash -Path $path).hash.tolower()})
     "IssuerName" = $Cert.IssuerName.Name
-    "Hash" = ($Cert.GetCertHashString()).ToLower()
+    "CertHash" = ($Cert.GetCertHashString()).ToLower()
     "Version" = $Cert.Version
     "SerialNumber" = ($Cert.GetSerialNumberString()).ToLower()
 }
@@ -57,7 +62,8 @@ $CertBody = [PSCustomObject]@{
     "Expiration_Date" = $Cert.GetExpirationDateString()
     "Signature_Algorithm" = $Cert.SignatureAlgorithm.FriendlyName
 }
-if($Cert.HasPrivateKey -eq $true)
+$CertPrivateKey = ""
+if($Cert.HasPrivateKey)
 {
     $CertPrivateKey = [PSCustomObject]@{
         "ProviderType" = get_ProviderType $Cert.PrivateKey.Key.CspKeyContainerInfo.ProviderType
@@ -80,7 +86,7 @@ $CertPublicKey = [PSCustomObject]@{
         "KeySize" = $Cert.PublicKey.Key.KeySize
         "PersistKeyInCsp" = $Cert.PublicKey.Key.PersistKeyInCsp
         "Algorithm" = $Cert.PublicKey.EncodedKeyValue.Oid.FriendlyName
-        "Key" =$Cert.PublicKey.EncodedKeyValue.RawData
+        "Key" = $Cert.PublicKey.EncodedKeyValue.RawData
     }
 $Json=[PSCustomObject]@{
     "Header" = $Certheader;
@@ -91,4 +97,5 @@ $Json=[PSCustomObject]@{
     }
 }
 $Json = $Json|convertto-json
-set-content -value $Json -Path "./result.json"
+if($o){set-content -value $Json -Path $o}
+else{set-content -value $Json -Path "result.json"}
