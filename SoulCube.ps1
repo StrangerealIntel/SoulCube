@@ -49,11 +49,14 @@ elseif ($fexe)
     $Cert=$Cert.SignerCertificate
 }
 else{write-host "exit";exit}
+
 $Certheader = [PSCustomObject]@{
     "Filename" = $(if ($fexe){(ls $path).name})
     "FileHash" = $(if ($fexe){(Get-Filehash -Path $path).hash.tolower()})
     "IssuerName" = $Cert.IssuerName.Name
     "CertHash" = ($Cert.GetCertHashString()).ToLower()
+    "ValidFrom" = ($Cert.NotBefore).ToString("yyyy-MM-dd HH:mm:ss")
+    "ValidTo" = ($Cert.NotAfter).ToString("yyyy-MM-dd HH:mm:ss")
     "Version" = $Cert.Version
     "SerialNumber" = ($Cert.GetSerialNumberString()).ToLower()
 }
@@ -77,6 +80,7 @@ if($Cert.HasPrivateKey)
         "Key" =$Cert.PrivateKey.EncodedKeyValue.RawData
     }
 }
+
 $CertPublicKey = [PSCustomObject]@{
         "ProviderType" = get_ProviderType $Cert.PublicKey.Key.CspKeyContainerInfo.ProviderType
         "KeyNumber" = $Cert.PublicKey.Key.CspKeyContainerInfo.KeyNumber
@@ -86,8 +90,9 @@ $CertPublicKey = [PSCustomObject]@{
         "KeySize" = $Cert.PublicKey.Key.KeySize
         "PersistKeyInCsp" = $Cert.PublicKey.Key.PersistKeyInCsp
         "Algorithm" = $Cert.PublicKey.EncodedKeyValue.Oid.FriendlyName
-        "Key" = $Cert.PublicKey.EncodedKeyValue.RawData
+        "Key" =$Cert.PublicKey.EncodedKeyValue.RawData
     }
+
 $Json=[PSCustomObject]@{
     "Header" = $Certheader;
     "Meta" = @{
