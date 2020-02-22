@@ -1,5 +1,5 @@
 # SoulCube
-##### Tool for extract the informations from a signed PE, certificate (cer or base 64 ) and parse it to a json. 
+##### Tool for extract the informations from a signed PE, certificate (cer or base 64) and parse it to a json. 
 
 ##### Useful for hunt samples using the same certificate (campaign) , get serial informations for having to revocation list or combine hash and signature for a goodware software used illegitimate ...
 
